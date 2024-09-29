@@ -47,6 +47,12 @@ class Post(db.Model):
         self.title = title
         self.body = body
 
+    def update(self, title, body):
+        self.created = datetime.now()
+        self.title = title
+        self.body = body
+        db.session.commit()
+
 
 # database admin
 class MainIndexLink(MenuLink):
