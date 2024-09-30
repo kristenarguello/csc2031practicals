@@ -38,9 +38,11 @@ class Post(db.Model):
     __tablename__ = "posts"
 
     id = db.Column(db.Integer, primary_key=True)
+    userid = db.Column(db.Integer, db.ForeignKey("users.id"))
     created = db.Column(db.DateTime, nullable=False)
     title = db.Column(db.Text, nullable=False)
     body = db.Column(db.Text, nullable=False)
+    user = db.relationship("User", back_populates="posts")
 
     def __init__(self, title, body):
         self.created = datetime.now()
@@ -54,6 +56,31 @@ class Post(db.Model):
         db.session.commit()
 
 
+class User(db.Model):
+    __tablename__ = "users"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    # User authentication information.
+    email = db.Column(db.String(100), nullable=False, unique=True)
+    password = db.Column(db.String(100), nullable=False)
+
+    # User information
+    firstname = db.Column(db.String(100), nullable=False)
+    lastname = db.Column(db.String(100), nullable=False)
+    phone = db.Column(db.String(100), nullable=False)
+
+    # User posts
+    posts = db.relationship("Post", order_by=Post.id, back_populates="user")
+
+    def __init__(self, email, firstname, lastname, phone, password):
+        self.email = email
+        self.firstname = firstname
+        self.lastname = lastname
+        self.phone = phone
+        self.password = password
+
+
 # database admin
 class MainIndexLink(MenuLink):
     def get_url(self):
@@ -63,13 +90,20 @@ class MainIndexLink(MenuLink):
 class PostView(ModelView):
     column_display_pk = True
     column_hide_backrefs = False
-    column_list = ("id", "created", "title", "body")
+    column_list = ("id", "userid", "created", "title", "body", "user")
+
+
+class UserView(ModelView):
+    column_display_pk = True  # optional, but I like to see the IDs in the list
+    column_hide_backrefs = False
+    column_list = ("id", "email", "password", "firstname", "lastname", "phone", "posts")
 
 
 admin = Admin(app, name="DB Admin", template_mode="bootstrap4")
 admin._menu = admin._menu[1:]
 admin.add_link(MainIndexLink(name="Home Page"))
 admin.add_view(PostView(Post, db.session))
+admin.add_view(UserView(User, db.session))
 
 
 # import blueprints (after app because of circular import)
