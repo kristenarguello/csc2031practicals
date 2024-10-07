@@ -18,6 +18,8 @@ app.config["SECRET_KEY"] = secrets.token_hex(16)
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///csc2031blog.db"
 app.config["SQLALCHEMY_ECHO"] = True
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+app.config["RECAPTCHA_PUBLIC_KEY"] = "6LdgyVUqAAAAAOlpHkzRlx7dr2F0SYp3QTp5Mo96"
+app.config["RECAPTCHA_PRIVATE_KEY"] = "6LdgyVUqAAAAANmq8UrWlHqa4taLr7ZR8nJWh_Pd"
 
 metadata = MetaData(
     naming_convention={
