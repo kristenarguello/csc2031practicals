@@ -53,7 +53,7 @@
                             {{ form.confirm_password.label}}<span style="color: red">*</span>
                             {{ form.confirm_password(class="form-control") }}
                             {% for error in form.confirm_password.errors %}
-                            {{ error }}
+                            <span style="color: red">{{ error }}<br></span>
                             {% endfor %}
                         </div>
                     </div>
