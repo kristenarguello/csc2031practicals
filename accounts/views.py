@@ -2,8 +2,6 @@ from flask import Blueprint, render_template, flash, redirect, url_for
 from accounts.forms import LoginForm, RegistrationForm
 from config import User, db
 
-from .utils import strong_password_validation
-
 accounts_bp = Blueprint("accounts", __name__, template_folder="templates")
 
 
@@ -15,11 +13,6 @@ def registration():
     if form.validate_on_submit():
         if User.query.filter_by(email=form.email.data).first():
             flash("Email already exists", category="danger")
-            return render_template("accounts/registration.html", form=form)
-
-        value, msg = strong_password_validation(form.password.data)
-        if not value:
-            flash(msg, category="danger")
             return render_template("accounts/registration.html", form=form)
 
         new_user = User(
