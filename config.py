@@ -80,6 +80,9 @@ class User(db.Model):
         self.phone = phone
         self.password = password
 
+    def validate_password(self, password):
+        return self.password == password
+
 
 # database admin
 class MainIndexLink(MenuLink):
