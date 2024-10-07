@@ -7,35 +7,37 @@
         <div class="col-3"></div>
         <div class="col-6">
             <form method="POST">
-                <div class="p-2 bg-light border border-primary" style="text-align: left">
-                    {{ form.csrf_token() }}
-                    <div>
-                        {% with messages = get_flashed_messages(with_categories=true) %}
-                        {% for category, message in messages %}
-                        <div class="alert alert-{{ category }} mt-3 alert-dismissible" role="alert">
-                            {{ message }}.
-                            <button type="button" class="btn-close" data-bs-dismiss="alert" onclick=delete_flash(this)>
-                                <span>&times;</span>
-                            </button>
+                <div class="p-2 bg-light border border-primary">
+                    <div style="text-align: left">
+                        {{ form.csrf_token() }}
+                        <div>
+                            {% with messages = get_flashed_messages(with_categories=true) %}
+                            {% for category, message in messages %}
+                            <div class="alert alert-{{ category }} mt-3 alert-dismissible" role="alert">
+                                {{ message }}.
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" onclick=delete_flash(this)>
+                                    <span>&times;</span>
+                                </button>
+                            </div>
+                            {% endfor %}
+                            {% endwith %}
                         </div>
-                        {% endfor %}
-                        {% endwith %}
+                        <div class="form-group">
+                            {{ form.email.label}}<span style="color: red">*</span>
+                            {{ form.email(class="form-control") }}
+                        </div>
+                        <div class="form-group">
+                            {{ form.password.label}}<span style="color: red">*</span>
+                            {{ form.password(class="form-control") }}
+                        </div>
+                        <div class="form-group">
+                            {{ form.recaptcha.label}}
+                            {{ form.recaptcha(class="form-check-input") }}
+                        </div>
                     </div>
-                    <div class="form-group">
-                        {{ form.email.label}}<span style="color: red">*</span>
-                        {{ form.email(class="form-control") }}
+                    <div>
+                        {{ form.submit(class="btn btn-success") }}
                     </div>
-                    <div class="form-group">
-                        {{ form.password.label}}<span style="color: red">*</span>
-                        {{ form.password(class="form-control") }}
-                    </div>
-                    <div class="form-group">
-                        {{ form.recaptcha.label}}
-                        {{ form.recaptcha(class="form-check-input") }}
-                    </div>
-                </div>
-                <div>
-                    {{ form.submit(class="btn btn-success") }}
                 </div>
             </form>
         </div>
