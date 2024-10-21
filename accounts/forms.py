@@ -1,13 +1,6 @@
 from flask_wtf import FlaskForm, RecaptchaField
 from wtforms import StringField, PasswordField, SubmitField
-from wtforms.validators import DataRequired, EqualTo
-from .utils import (
-    length_validation,
-    lowercase_validation,
-    uppercase_validation,
-    digit_validation,
-    special_character_validation,
-)
+from wtforms.validators import DataRequired, EqualTo, Length, Regexp
 
 
 class RegistrationForm(FlaskForm):
@@ -18,11 +11,21 @@ class RegistrationForm(FlaskForm):
     password = PasswordField(
         validators=[
             DataRequired(),
-            length_validation(min=8, max=15),
-            lowercase_validation,
-            uppercase_validation,
-            digit_validation,
-            special_character_validation,
+            Length(
+                min=8, max=15, message="Password must be between 8 and 15 characters."
+            ),
+            Regexp(
+                regex=".*[A-Z]", flags=0, message="Password must contain an uppercase."
+            ),
+            Regexp(
+                regex=".*[a-z]", flags=0, message="Password must contain a lowercase."
+            ),
+            Regexp(regex=".*[0-9]", flags=0, message="Password must contain a digit."),
+            Regexp(
+                regex=".*[@#$%^&+=]",
+                flags=0,
+                message="Password must contain a special character.",
+            ),
         ]
     )
     confirm_password = PasswordField(
