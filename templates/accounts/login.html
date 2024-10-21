@@ -9,7 +9,6 @@
             <form method="POST">
                 <div class="p-2 bg-light border border-primary">
                     <div style="text-align: left">
-                        {{ form.csrf_token() }}
                         <div>
                             {% with messages = get_flashed_messages(with_categories=true) %}
                             {% for category, message in messages %}
@@ -21,7 +20,9 @@
                             </div>
                             {% endfor %}
                             {% endwith %}
+                        {% if form %}
                         </div>
+                        {{ form.csrf_token() }}
                         <div class="form-group">
                             {{ form.email.label}}<span style="color: red">*</span>
                             {{ form.email(class="form-control") }}
@@ -40,6 +41,7 @@
                     <div>
                         {{ form.submit(class="btn btn-success") }}
                     </div>
+                    {% endif %}
                 </div>
             </form>
         </div>

@@ -113,6 +113,17 @@ admin.add_view(PostView(Post, db.session))
 admin.add_view(UserView(User, db.session))
 
 
+# app wide default rate limiter
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+
+limiter = Limiter(
+    key_func=get_remote_address,
+    app=app,
+    default_limits=["500 per day"],
+)
+
+
 # import blueprints (after app because of circular import)
 from accounts.views import accounts_bp
 from posts.views import posts_bp
