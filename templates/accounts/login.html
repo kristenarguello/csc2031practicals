@@ -13,7 +13,7 @@
                             {% with messages = get_flashed_messages(with_categories=true) %}
                             {% for category, message in messages %}
                             <div class="alert alert-{{ category }} mt-3 alert-dismissible" role="alert">
-                                {{ message }}.
+                                {{ message }}
                                 <button type="button" class="btn-close" data-bs-dismiss="alert" onclick=delete_flash(this)>
                                     <span>&times;</span>
                                 </button>
@@ -30,6 +30,10 @@
                         <div class="form-group">
                             {{ form.password.label}}<span style="color: red">*</span>
                             {{ form.password(class="form-control") }}
+                        </div>
+                        <div class="form-group">
+                            {{ form.mfa_key.label}}<span style="color: red">*</span>
+                            {{ form.mfa_key(class="form-control") }}
                         </div>
                         <div class="form-group">
                             {{ form.recaptcha}}

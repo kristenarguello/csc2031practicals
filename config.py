@@ -1,11 +1,13 @@
 import secrets
-
 from datetime import datetime
+
+import pyotp
 from flask import Flask, url_for
 from flask_admin import Admin
 from flask_admin.contrib.sqla import ModelView
 from flask_admin.menu import MenuLink
 from flask_migrate import Migrate
+from flask_qrcode import QRcode
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import MetaData
 
@@ -22,6 +24,9 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 # recaptcha configuration
 app.config["RECAPTCHA_PUBLIC_KEY"] = "6Lcur1oqAAAAADss3xvAdVlpRqlt1pSf43nskd-K"
 app.config["RECAPTCHA_PRIVATE_KEY"] = "6Lcur1oqAAAAAAfoao99Z-fuC3x4m8YpirBqQ1Rm"
+
+# flask admin configuration
+app.config["FLASK_ADMIN_FLUID_LAYOUT"] = True
 
 metadata = MetaData(
     naming_convention={
@@ -68,6 +73,8 @@ class User(db.Model):
     # User authentication information.
     email = db.Column(db.String(100), nullable=False, unique=True)
     password = db.Column(db.String(100), nullable=False)
+    mfa_key = db.Column(db.String(32), nullable=False, default=pyotp.random_base32())
+    mfa_enabled = db.Column(db.Boolean, nullable=False, default=False)
 
     # User information
     firstname = db.Column(db.String(100), nullable=False)
@@ -83,9 +90,24 @@ class User(db.Model):
         self.lastname = lastname
         self.phone = phone
         self.password = password
+        self.mfa_key = pyotp.random_base32()
+        self.mfa_enabled = False
 
     def validate_password(self, password):
         return self.password == password
+
+    def validate_mfa(self, token):
+        totp = pyotp.TOTP(self.mfa_key)
+        return totp.verify(token)
+
+    def get_uri_mfa(self):
+        return str(
+            str(
+                pyotp.totp.TOTP(self.mfa_key).provisioning_uri(
+                    self.email, "CSC2031 Blog"
+                )
+            )
+        )
 
 
 # database admin
@@ -103,7 +125,17 @@ class PostView(ModelView):
 class UserView(ModelView):
     column_display_pk = True  # optional, but I like to see the IDs in the list
     column_hide_backrefs = False
-    column_list = ("id", "email", "password", "firstname", "lastname", "phone", "posts")
+    column_list = (
+        "id",
+        "email",
+        "password",
+        "mfa_key",
+        "mfa_enabled",
+        "firstname",
+        "lastname",
+        "phone",
+        "posts",
+    )
 
 
 admin = Admin(app, name="DB Admin", template_mode="bootstrap4")
@@ -122,6 +154,9 @@ limiter = Limiter(
     app=app,
     default_limits=["500 per day"],
 )
+
+# set up mfa qr code
+qrcode = QRcode(app)
 
 
 # import blueprints (after app because of circular import)

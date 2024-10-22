@@ -22,7 +22,7 @@ class RegistrationForm(FlaskForm):
             ),
             Regexp(regex=".*[0-9]", flags=0, message="Password must contain a digit."),
             Regexp(
-                regex=".*[@#$%^&+=]",
+                regex=".*[$&+,:;=?@#|'<>.-^*()%!]",
                 flags=0,
                 message="Password must contain a special character.",
             ),
@@ -40,5 +40,6 @@ class RegistrationForm(FlaskForm):
 class LoginForm(FlaskForm):
     email = StringField(validators=[DataRequired()])
     password = PasswordField(validators=[DataRequired()])
+    mfa_key = StringField(validators=[DataRequired()])
     submit = SubmitField()
     recaptcha = RecaptchaField()

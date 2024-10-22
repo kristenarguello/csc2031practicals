@@ -23,7 +23,7 @@ def create():
         db.session.add(new_post)
         db.session.commit()
 
-        flash("Post created", category="success")
+        flash("Post created.", category="success")
         return redirect(url_for("posts.posts"))
 
     return render_template("posts/create.html", form=form)
@@ -41,7 +41,7 @@ def update(id):
     if form.validate_on_submit():
         post_to_update.update(title=form.title.data, body=form.body.data)
 
-        flash("Post updated", category="success")
+        flash("Post updated.", category="success")
         return redirect(url_for("posts.posts"))
 
     form.title.data = post_to_update.title
@@ -55,5 +55,5 @@ def delete(id):
     Post.query.filter_by(id=id).delete()
     db.session.commit()
 
-    flash("Post deleted", category="success")
+    flash("Post deleted.", category="success")
     return redirect(url_for("posts.posts"))

@@ -15,5 +15,8 @@ Flask-WTF
 Flask-Admin
 WTForms
 Flask-Limiter
+flask-qrcode
 
 python-dotenv
+
+pyotp

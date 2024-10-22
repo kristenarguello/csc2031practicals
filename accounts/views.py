@@ -14,7 +14,7 @@ def registration():
 
     if form.validate_on_submit():
         if User.query.filter_by(email=form.email.data).first():
-            flash("Email already exists", category="danger")
+            flash("Email already exists.", category="danger")
             return render_template("accounts/registration.html", form=form)
 
         new_user = User(
@@ -28,17 +28,17 @@ def registration():
         db.session.add(new_user)
         db.session.commit()
 
-        flash("Account Created", category="success")
-        return redirect(url_for("accounts.login"))
+        flash(
+            "Account Created. You must enable Multi-Factor Authentication (MFA) to login.",
+            category="success",
+        )
+        return render_template(
+            "accounts/setup_mfa.html",
+            secret=new_user.mfa_key,
+            uri=new_user.get_uri_mfa(),
+        )
 
     return render_template("accounts/registration.html", form=form)
-
-
-# keep track of users invalid authentication attempts
-# maximum permitted attempts = 3
-# invalid authentication should contain the number of permitted attempts left
-# login form should be hidden when the maximum number of permitted invalid authentication attempts is reached - simulate the users account being locked
-# provide a link to the user to simulate the unlocking of the users account - reset to 3 permitted attempts
 
 
 def authentication_attempts_limiter(session, form):
@@ -79,18 +79,40 @@ def login():
     if form.validate_on_submit():
         user = User.query.filter_by(email=form.email.data).first()
 
-        # if user does not exist
-        if not user or not user.validate_password(form.password.data):
-            session["attempts"] += 1
-            form = authentication_attempts_limiter(session=session, form=form)
-            return render_template("accounts/login.html", form=form)
+        # check if email and password are valid
+        if user and user.validate_password(form.password.data):
 
-        # reset attempts
-        session["attempts"] = 0
-        flash("Login Successful", category="success")
-        return redirect(url_for("posts.posts"))
+            # check if key is valid
+            if user.validate_mfa(form.mfa_key.data):
 
-    # pass form as parameter
+                # check if MFA is enabled when getting the key right
+                if user.mfa_enabled is False:
+                    # TODO: need to check if it's really changing in the db
+                    user.mfa_enabled = True
+                    db.session.commit()
+
+                # got email, password and mfa right = login successful
+                session["attempts"] = 0
+                flash("Login Successful.", category="success")
+                return redirect(url_for("posts.posts"))
+
+            # check if MFA is not enabled when getting the key wrong
+            elif user.mfa_enabled is False:
+                flash(
+                    "You have not enabled Multi-Factor Authentication. Please enable MFA to login.",
+                    category="danger",
+                )
+                return render_template(
+                    "accounts/setup_mfa.html",
+                    secret=user.mfa_key,
+                    uri=user.get_uri_mfa(),
+                )
+
+        # got something wrong - increase attempts
+        session["attempts"] += 1
+        form = authentication_attempts_limiter(session=session, form=form)
+
+    # form was not valid or the number of attempts was exceeded
     return render_template("accounts/login.html", form=form)
 
 
@@ -103,3 +125,8 @@ def account():
 def unlock():
     session["attempts"] = 0
     return redirect(url_for("accounts.login"))
+
+
+@accounts_bp.route("/mfa_setup")
+def mfa_setup():
+    return render_template("accounts/setup_mfa.html")
