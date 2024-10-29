@@ -3,6 +3,7 @@ from flask_login import current_user, login_required
 from sqlalchemy import desc
 
 from config import Post, db
+from decorators import roles_required
 from posts.forms import PostForm
 
 posts_bp = Blueprint("posts", __name__, template_folder="templates")
@@ -10,6 +11,7 @@ posts_bp = Blueprint("posts", __name__, template_folder="templates")
 
 @posts_bp.route("/posts")
 @login_required
+@roles_required("end_user")
 def posts():
     all_posts = Post.query.order_by(desc("id")).all()
 
@@ -18,6 +20,7 @@ def posts():
 
 @posts_bp.route("/create", methods=["GET", "POST"])
 @login_required
+@roles_required("end_user")
 def create():
     form = PostForm()
 
@@ -37,6 +40,7 @@ def create():
 
 @posts_bp.route("/<int:id>/update", methods=("GET", "POST"))
 @login_required
+@roles_required("end_user")
 def update(id):
     post = Post.query.filter_by(id=id).first()
     if not post:
@@ -67,6 +71,7 @@ def update(id):
 
 @posts_bp.route("/<int:id>/delete")
 @login_required
+@roles_required("end_user")
 def delete(id):
     post = Post.query.filter_by(id=id).first()
     if not post:

@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import override
 
 import pyotp
-from flask import Flask, flash, redirect, url_for
+from flask import Flask, abort, flash, redirect, url_for
 from flask_admin import Admin
 from flask_admin.contrib.sqla import ModelView
 from flask_admin.menu import MenuLink
@@ -90,6 +90,7 @@ class User(db.Model, UserMixin):
     password = db.Column(db.String(100), nullable=False)
     mfa_key = db.Column(db.String(32), nullable=False, default=pyotp.random_base32())
     mfa_enabled = db.Column(db.Boolean, nullable=False, default=False)
+    role = db.Column(db.String(100), nullable=False, default="end_user")
 
     # User information
     firstname = db.Column(db.String(100), nullable=False)
@@ -104,12 +105,13 @@ class User(db.Model, UserMixin):
 
     def __init__(self, email, firstname, lastname, phone, password):
         self.email = email
-        self.firstname = firstname
-        self.lastname = lastname
-        self.phone = phone
         self.password = password
         self.mfa_key = pyotp.random_base32()
         self.mfa_enabled = False
+        self.role = "end_user"
+        self.firstname = firstname
+        self.lastname = lastname
+        self.phone = phone
 
     def validate_password(self, password):
         return self.password == password
@@ -144,12 +146,19 @@ class PostView(ModelView):
     column_hide_backrefs = False
     column_list = ("id", "userid", "created", "title", "body", "user")
 
+    can_create = False
+    can_edit = False
+    can_delete = False
+
     @override
     def is_accessible(self):
-        return current_user.is_authenticated
+        return current_user.role == "db_admin"
 
     @override
     def inaccessible_callback(self, name, **kwargs):  # type: ignore
+        if current_user.is_authenticated:
+            abort(403)
+        # if anonymous
         flash("Administrator access required.", category="danger")
         return redirect(url_for("accounts.login"))
 
@@ -171,10 +180,13 @@ class UserView(ModelView):
 
     @override
     def is_accessible(self):
-        return current_user.is_authenticated
+        return current_user.role == "db_admin"
 
     @override
     def inaccessible_callback(self, name, **kwargs):  # type: ignore
+        if current_user.is_authenticated:
+            abort(403)
+        # if anonymous
         flash("Administrator access required.", category="danger")
         return redirect(url_for("accounts.login"))
 

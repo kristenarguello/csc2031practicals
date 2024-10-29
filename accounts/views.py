@@ -1,20 +1,18 @@
 from flask import Blueprint, flash, redirect, render_template, session, url_for
-from flask_login import login_required, login_user, logout_user, current_user
+from flask_login import login_required, logout_user
 from markupsafe import Markup
 
 from accounts.forms import LoginForm, RegistrationForm
+from accounts.utils import authentication_attempts_limiter, login_and_redirect
 from config import User, db, limiter
+from decorators import anonymous_required
 
 accounts_bp = Blueprint("accounts", __name__, template_folder="templates")
 
 
 @accounts_bp.route("/registration", methods=["GET", "POST"])
+@anonymous_required
 def registration():
-    # TODO: change this to a custom decorator
-    if current_user.is_authenticated:
-        flash("You are already logged in.", category="info")
-        return redirect(url_for("posts.posts"))
-
     form = RegistrationForm()
 
     if form.validate_on_submit():
@@ -46,42 +44,11 @@ def registration():
     return render_template("accounts/registration.html", form=form)
 
 
-def authentication_attempts_limiter(session, form, user):
-    """
-    Limit the number of authentication attempts.
-    Returns the login form if the number of attempts
-    is less than 3 and None if the number of attempts
-    is greater than or equal to 3.
-    """
-    if session["attempts"] >= 3:
-        flash(
-            Markup(
-                "Number of incorrect login attempts exceeded. Please click <a href='/unlock'>here</a> to unlock your account."
-            ),
-            category="danger",
-        )
-        # TODO: set user to inactive
-        # user may not log in using credentials from an inactive account
-        # user.active = False
-
-        # hide login form
-        return None
-    flash(
-        f"Please check your login credentials and try again. You have {3 - session['attempts']} attempts left.",
-        category="danger",
-    )
-    return form
-
-
 # when reloading the page the form reappears but the session is not reset
 @accounts_bp.route("/login", methods=["GET", "POST"])
 @limiter.limit("20 per minute")
+@anonymous_required
 def login():
-    # TODO: change this to a custom decorator
-    if current_user.is_authenticated:
-        flash("You are already logged in.", category="info")
-        return redirect(url_for("posts.posts"))
-
     # check if authentication attempts is in session
     if "attempts" not in session:
         session["attempts"] = 0
@@ -104,21 +71,7 @@ def login():
                     user.mfa_enabled = True
                     db.session.commit()
 
-                # got email, password and mfa right = login successful
-                logged = login_user(user)
-                print(
-                    f"User logged in: {logged} - session _user_id: {session['_user_id']}"
-                )
-                if logged is False:
-                    flash(
-                        "Something happened, login failed. Please try again.",
-                        category="danger",
-                    )
-                    return redirect(url_for("accounts.login"))
-
-                session["attempts"] = 0
-                flash("Login Successful.", category="success")
-                return redirect(url_for("posts.posts"))
+                return login_and_redirect(user)
 
             # check if MFA is not enabled when getting the key wrong
             elif user.mfa_enabled is False:
@@ -147,21 +100,15 @@ def account():
 
 
 @accounts_bp.route("/unlock")
+@anonymous_required
 def unlock():
-    # TODO: change this to a custom decorator
-    if current_user.is_authenticated:
-        flash("You are already logged in.", category="info")
-        return redirect(url_for("posts.posts"))
     session["attempts"] = 0
     return redirect(url_for("accounts.login"))
 
 
 @accounts_bp.route("/mfa_setup")
+@anonymous_required
 def mfa_setup():
-    # TODO: change this to a custom decorator
-    if current_user.is_authenticated:
-        flash("You are already logged in.", category="info")
-        return redirect(url_for("posts.posts"))
     return render_template("accounts/setup_mfa.html")
 
 
