@@ -1,12 +1,13 @@
 import secrets
 from datetime import datetime
+from typing import override
 
 import pyotp
-from flask import Flask, url_for
+from flask import Flask, flash, redirect, url_for
 from flask_admin import Admin
 from flask_admin.contrib.sqla import ModelView
 from flask_admin.menu import MenuLink
-from flask_login import LoginManager, UserMixin
+from flask_login import LoginManager, UserMixin, current_user
 from flask_migrate import Migrate
 from flask_qrcode import QRcode
 from flask_sqlalchemy import SQLAlchemy
@@ -44,6 +45,9 @@ migrate = Migrate(app, db)
 
 # set up login configuration
 login_manager = LoginManager()
+login_manager.login_view = "/login"  # type: ignore
+login_manager.login_message = "You must be logged in to access this page."
+login_manager.login_message_category = "danger"
 login_manager.init_app(app)
 
 
@@ -140,6 +144,15 @@ class PostView(ModelView):
     column_hide_backrefs = False
     column_list = ("id", "userid", "created", "title", "body", "user")
 
+    @override
+    def is_accessible(self):
+        return current_user.is_authenticated
+
+    @override
+    def inaccessible_callback(self, name, **kwargs):  # type: ignore
+        flash("Administrator access required.", category="danger")
+        return redirect(url_for("accounts.login"))
+
 
 class UserView(ModelView):
     column_display_pk = True  # optional, but I like to see the IDs in the list
@@ -155,6 +168,15 @@ class UserView(ModelView):
         "phone",
         "posts",
     )
+
+    @override
+    def is_accessible(self):
+        return current_user.is_authenticated
+
+    @override
+    def inaccessible_callback(self, name, **kwargs):  # type: ignore
+        flash("Administrator access required.", category="danger")
+        return redirect(url_for("accounts.login"))
 
 
 admin = Admin(app, name="DB Admin", template_mode="bootstrap4")

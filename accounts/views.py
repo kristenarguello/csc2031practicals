@@ -1,5 +1,5 @@
 from flask import Blueprint, flash, redirect, render_template, session, url_for
-from flask_login import login_user, logout_user
+from flask_login import login_required, login_user, logout_user, current_user
 from markupsafe import Markup
 
 from accounts.forms import LoginForm, RegistrationForm
@@ -10,6 +10,10 @@ accounts_bp = Blueprint("accounts", __name__, template_folder="templates")
 
 @accounts_bp.route("/registration", methods=["GET", "POST"])
 def registration():
+    # TODO: change this to a custom decorator
+    if current_user.is_authenticated:
+        flash("You are already logged in.", category="info")
+        return redirect(url_for("posts.posts"))
 
     form = RegistrationForm()
 
@@ -73,6 +77,11 @@ def authentication_attempts_limiter(session, form, user):
 @accounts_bp.route("/login", methods=["GET", "POST"])
 @limiter.limit("20 per minute")
 def login():
+    # TODO: change this to a custom decorator
+    if current_user.is_authenticated:
+        flash("You are already logged in.", category="info")
+        return redirect(url_for("posts.posts"))
+
     # check if authentication attempts is in session
     if "attempts" not in session:
         session["attempts"] = 0
@@ -132,22 +141,32 @@ def login():
 
 
 @accounts_bp.route("/account")
+@login_required
 def account():
     return render_template("accounts/account.html")
 
 
 @accounts_bp.route("/unlock")
 def unlock():
+    # TODO: change this to a custom decorator
+    if current_user.is_authenticated:
+        flash("You are already logged in.", category="info")
+        return redirect(url_for("posts.posts"))
     session["attempts"] = 0
     return redirect(url_for("accounts.login"))
 
 
 @accounts_bp.route("/mfa_setup")
 def mfa_setup():
+    # TODO: change this to a custom decorator
+    if current_user.is_authenticated:
+        flash("You are already logged in.", category="info")
+        return redirect(url_for("posts.posts"))
     return render_template("accounts/setup_mfa.html")
 
 
 @accounts_bp.route("/logout")
+@login_required
 def logout():
     logout_user()
     return redirect(url_for("index"))

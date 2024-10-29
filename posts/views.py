@@ -1,5 +1,5 @@
 from flask import Blueprint, flash, redirect, render_template, url_for
-from flask_login import current_user
+from flask_login import current_user, login_required
 from sqlalchemy import desc
 
 from config import Post, db
@@ -9,6 +9,7 @@ posts_bp = Blueprint("posts", __name__, template_folder="templates")
 
 
 @posts_bp.route("/posts")
+@login_required
 def posts():
     all_posts = Post.query.order_by(desc("id")).all()
 
@@ -16,6 +17,7 @@ def posts():
 
 
 @posts_bp.route("/create", methods=["GET", "POST"])
+@login_required
 def create():
     form = PostForm()
 
@@ -34,7 +36,16 @@ def create():
 
 
 @posts_bp.route("/<int:id>/update", methods=("GET", "POST"))
+@login_required
 def update(id):
+    post = Post.query.filter_by(id=id).first()
+    if not post:
+        flash("Post not found.", category="danger")
+        return redirect(url_for("posts.posts"))
+    if post and current_user.get_id() != str(post.userid):
+        flash("You do not have permission to update this post.", category="danger")
+        return redirect(url_for("posts.posts"))
+
     post_to_update = Post.query.filter_by(id=id).first()
 
     if not post_to_update:
@@ -55,7 +66,16 @@ def update(id):
 
 
 @posts_bp.route("/<int:id>/delete")
+@login_required
 def delete(id):
+    post = Post.query.filter_by(id=id).first()
+    if not post:
+        flash("Post not found.", category="danger")
+        return redirect(url_for("posts.posts"))
+    if post and current_user.get_id() != str(post.userid):
+        flash("You do not have permission to delete this post.", category="danger")
+        return redirect(url_for("posts.posts"))
+
     Post.query.filter_by(id=id).delete()
     db.session.commit()
 
