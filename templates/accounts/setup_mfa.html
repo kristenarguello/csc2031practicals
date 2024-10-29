@@ -1,63 +1,57 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container">
-    <h1>Multi-Factor Authentication (MFA) Setup</h1>
-    <div class="p-2 row">
-        <div class="col-3"></div>
-        <div class="col-6">
-                <div class="p-2 bg-light border border-primary">
-                    <div style="text-align: center">
-                        <div>
-                            {% with messages = get_flashed_messages(with_categories=true) %}
-                            {% for category, message in messages %}
-                            <div class="alert alert-{{ category }} mt-3 alert-dismissible" role="alert">
-                                {{ message }}
-                                <button type="button" class="btn-close" data-bs-dismiss="alert" onclick=delete_flash(this)>
-                                    <span>&times;</span>
-                                </button>
-                            </div>
-                            {% endfor %}
-                            {% endwith %}
+<div class="container mt-5">
+    <h1 class="text-center mb-4">Multi-Factor Authentication (MFA) Setup</h1>
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="p-4 bg-light border border-primary rounded shadow-sm">
+                <div class="text-center">
+                    <div>
+                        {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} alert-dismissible fade show mt-3" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close" onclick="delete_flash(this)" style="position: relative; top: -2px; right: -2px;">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
                         </div>
-                        <div class="form-group">
-                            Open Microsoft Authenticator on your mobile.
-                        </div>
-                        <div class="form-group">
-                            Alternatively, download <a href="https://apps.apple.com/us/app/google-authenticator/id388497605">Google Authenticator</a> on your mobile.
-                        </div>
-                        <div class="form-group">
-                            Select add new account.
-                        </div>
-                        <div class="form-group">
-                            Manually enter the code below or scan the QR code:
-                        </div>
-                        <div class="p-2 bg-light border border-primary" style="size: 3rem">
-                                Code:<br>
-                                {% if secret %}
-                                    <strong>{{ secret }}</strong>
-                                    <br>
-                                    <br>
-                                {% else %}
-                                    <strong>Secret not available</strong>
-                                    <br>
-                                    <br>
-                                {% endif %}
-                                QR Code:<br>
-                                {% if uri %}
-                                    <img src="{{ qrcode(uri, box_size=5, border=5) }}" alt="QR Code for MFA">
-                                {% else %}
-                                    <strong>QR Code not available</strong>
-                                {% endif %}
-                        </div>
-                        <div class="form-group">
-                            <br>Once you have entered the Code, please click <a href="{{ url_for('accounts.login') }}">here</a>.
-                        </div>
+                        {% endfor %}
+                        {% endwith %}
+                    </div>
+                    <div class="mb-3">
+                        <p>Open Microsoft Authenticator on your mobile.</p>
+                    </div>
+                    <div class="mb-3">
+                        <p>Alternatively, download <a href="https://apps.apple.com/us/app/google-authenticator/id388497605" class="link-primary">Google Authenticator</a> on your mobile.</p>
+                    </div>
+                    <div class="mb-3">
+                        <p>Select add new account.</p>
+                    </div>
+                    <div class="mb-3">
+                        <p>Manually enter the code below or scan the QR code:</p>
+                    </div>
+                    <div class="p-3 bg-white border border-secondary rounded mb-3">
+                        <p>Code:</p>
+                        {% if secret %}
+                            <strong>{{ secret }}</strong>
+                        {% else %}
+                            <strong>Secret not available</strong>
+                        {% endif %}
+                        <br><br>
+                        <p>QR Code:</p>
+                        {% if uri %}
+                            <img src="{{ qrcode(uri, box_size=5, border=5) }}" alt="QR Code for MFA" class="img-fluid">
+                        {% else %}
+                            <strong>QR Code not available</strong>
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        <p>Once you have entered the Code, please click <a href="{{ url_for('accounts.login') }}" class="link-primary">here</a>.</p>
                     </div>
                 </div>
+            </div>
         </div>
-        <!-- <div class="col-3"></div> -->
     </div>
-
 </div>
 {% endblock %}

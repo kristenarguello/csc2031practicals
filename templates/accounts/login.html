@@ -1,55 +1,51 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container"></div>
-    <h1>Login</h1>
-    <div class="p-2 row">
-        <div class="col-3"></div>
-        <div class="col-6">
-            <form method="POST">
-                <div class="p-2 bg-light border border-primary">
-                    <div style="text-align: left">
-                        <div>
-                            {% with messages = get_flashed_messages(with_categories=true) %}
-                            {% for category, message in messages %}
-                            <div class="alert alert-{{ category }} mt-3 alert-dismissible" role="alert">
-                                {{ message }}
-                                <button type="button" class="btn-close" data-bs-dismiss="alert" onclick=delete_flash(this)>
-                                    <span>&times;</span>
-                                </button>
-                            </div>
-                            {% endfor %}
-                            {% endwith %}
-                        {% if form %}
-                        </div>
-                        {{ form.csrf_token() }}
-                        <div class="form-group">
-                            {{ form.email.label}}<span style="color: red">*</span>
-                            {{ form.email(class="form-control") }}
-                        </div>
-                        <div class="form-group">
-                            {{ form.password.label}}<span style="color: red">*</span>
-                            {{ form.password(class="form-control") }}
-                        </div>
-                        <div class="form-group">
-                            {{ form.mfa_key.label}}<span style="color: red">*</span>
-                            {{ form.mfa_key(class="form-control") }}
-                        </div>
-                        <div class="form-group">
-                            {{ form.recaptcha}}
-                            {% for error in form.recaptcha.errors %}
-                            <span style="color: red">{{ error }}<br></span>
-                            {% endfor %}
-                        </div>
-                    </div>
+<div class="container mt-5">
+    <h1 class="text-center mb-4">Login</h1>
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="p-4 bg-light border border-primary rounded shadow-sm">
+                <form method="POST">
                     <div>
-                        {{ form.submit(class="btn btn-success") }}
+                        {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} alert-dismissible fade show mt-3" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close" onclick="delete_flash(this)" style="position: relative; top: -2px; right: -2px;">
+                                <span aria-hidden="true">&times;</span>
+                            </button>                        
+                        </div>
+                        {% endfor %}
+                        {% endwith %}
+                    </div>
+                    {% if form %}
+                    {{ form.csrf_token() }}
+                    <div class="mb-3">
+                        <label for="{{ form.email.id }}" class="form-label">{{ form.email.label }}<span class="text-danger">*</span></label>
+                        {{ form.email(class="form-control") }}
+                    </div>
+                    <div class="mb-3">
+                        <label for="{{ form.password.id }}" class="form-label">{{ form.password.label }}<span class="text-danger">*</span></label>
+                        {{ form.password(class="form-control") }}
+                    </div>
+                    <div class="mb-3">
+                        <label for="{{ form.mfa_key.id }}" class="form-label">{{ form.mfa_key.label }}<span class="text-danger">*</span></label>
+                        {{ form.mfa_key(class="form-control") }}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.recaptcha }}
+                        {% for error in form.recaptcha.errors %}
+                        <span class="text-danger">{{ error }}<br></span>
+                        {% endfor %}
+                    </div>
+                    <div class="text-end">
+                        {{ form.submit(class="btn btn-success btn-lg px-4 py-2 shadow-sm") }}
                     </div>
                     {% endif %}
-                </div>
-            </form>
+                </form>
+            </div>
         </div>
-        <div class="col-3"></div>
     </div>
 </div>
 {% endblock %}
