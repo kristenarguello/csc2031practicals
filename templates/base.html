@@ -25,6 +25,12 @@
         <a class="nav-item nav-link" href="{{ url_for('posts.create') }}">Create Post</a>
         <a class="nav-item nav-link" href="{{ url_for('security.security') }}">Security</a>
         <a class="nav-item nav-link" href="http://127.0.0.1:5000/admin">DB Admin</a>
+        {% if current_user.is_anonymous == False %}
+            <p class="nav-item nav-link ml-auto">Logged in as: {{ current_user.firstname }} {{current_user.lastname }}</p>
+        {% else %}
+            <p class="nav-item nav-link ml-auto">User currently not logged in.</p>
+        {% endif %}
+        <a class="nav-item nav-link ml-auto" href="{{ url_for('accounts.logout') }}">Logout</a>
     </nav>
     <div class="container-fluid p-3 my-5 text-center">
 

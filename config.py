@@ -6,6 +6,7 @@ from flask import Flask, url_for
 from flask_admin import Admin
 from flask_admin.contrib.sqla import ModelView
 from flask_admin.menu import MenuLink
+from flask_login import LoginManager, UserMixin
 from flask_migrate import Migrate
 from flask_qrcode import QRcode
 from flask_sqlalchemy import SQLAlchemy
@@ -41,6 +42,15 @@ metadata = MetaData(
 db = SQLAlchemy(app, metadata=metadata)
 migrate = Migrate(app, db)
 
+# set up login configuration
+login_manager = LoginManager()
+login_manager.init_app(app)
+
+
+@login_manager.user_loader
+def load_user(id: int):
+    return User.query.get(int(id))
+
 
 # database tables
 class Post(db.Model):
@@ -53,8 +63,9 @@ class Post(db.Model):
     body = db.Column(db.Text, nullable=False)
     user = db.relationship("User", back_populates="posts")
 
-    def __init__(self, title, body):
+    def __init__(self, userid, title, body):
         self.created = datetime.now()
+        self.userid = userid
         self.title = title
         self.body = body
 
@@ -65,7 +76,7 @@ class Post(db.Model):
         db.session.commit()
 
 
-class User(db.Model):
+class User(db.Model, UserMixin):
     __tablename__ = "users"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -83,6 +94,9 @@ class User(db.Model):
 
     # User posts
     posts = db.relationship("Post", order_by=Post.id, back_populates="user")
+
+    # UserMixin attributes
+    active = db.Column(db.Boolean, nullable=False, default=True)
 
     def __init__(self, email, firstname, lastname, phone, password):
         self.email = email
@@ -108,6 +122,11 @@ class User(db.Model):
                 )
             )
         )
+
+    # user mixin properties
+    @property
+    def is_active(self):
+        return self.active
 
 
 # database admin
@@ -157,7 +176,6 @@ limiter = Limiter(
 
 # set up mfa qr code
 qrcode = QRcode(app)
-
 
 # import blueprints (after app because of circular import)
 from accounts.views import accounts_bp

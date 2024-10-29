@@ -16,6 +16,7 @@ Flask-Admin
 WTForms
 Flask-Limiter
 flask-qrcode
+Flask-Login
 
 python-dotenv
 

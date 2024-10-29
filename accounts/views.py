@@ -1,4 +1,5 @@
 from flask import Blueprint, flash, redirect, render_template, session, url_for
+from flask_login import login_user, logout_user
 from markupsafe import Markup
 
 from accounts.forms import LoginForm, RegistrationForm
@@ -41,7 +42,7 @@ def registration():
     return render_template("accounts/registration.html", form=form)
 
 
-def authentication_attempts_limiter(session, form):
+def authentication_attempts_limiter(session, form, user):
     """
     Limit the number of authentication attempts.
     Returns the login form if the number of attempts
@@ -55,6 +56,10 @@ def authentication_attempts_limiter(session, form):
             ),
             category="danger",
         )
+        # TODO: set user to inactive
+        # user may not log in using credentials from an inactive account
+        # user.active = False
+
         # hide login form
         return None
     flash(
@@ -87,11 +92,21 @@ def login():
 
                 # check if MFA is enabled when getting the key right
                 if user.mfa_enabled is False:
-                    # TODO: need to check if it's really changing in the db
                     user.mfa_enabled = True
                     db.session.commit()
 
                 # got email, password and mfa right = login successful
+                logged = login_user(user)
+                print(
+                    f"User logged in: {logged} - session _user_id: {session['_user_id']}"
+                )
+                if logged is False:
+                    flash(
+                        "Something happened, login failed. Please try again.",
+                        category="danger",
+                    )
+                    return redirect(url_for("accounts.login"))
+
                 session["attempts"] = 0
                 flash("Login Successful.", category="success")
                 return redirect(url_for("posts.posts"))
@@ -110,7 +125,7 @@ def login():
 
         # got something wrong - increase attempts
         session["attempts"] += 1
-        form = authentication_attempts_limiter(session=session, form=form)
+        form = authentication_attempts_limiter(session=session, form=form, user=user)
 
     # form was not valid or the number of attempts was exceeded
     return render_template("accounts/login.html", form=form)
@@ -130,3 +145,9 @@ def unlock():
 @accounts_bp.route("/mfa_setup")
 def mfa_setup():
     return render_template("accounts/setup_mfa.html")
+
+
+@accounts_bp.route("/logout")
+def logout():
+    logout_user()
+    return redirect(url_for("index"))
