@@ -1,20 +1,9 @@
 from flask import flash, redirect, session, url_for
-from flask_login import current_user, login_user
+from flask_login import login_user
 from markupsafe import Markup
 
 from config import db
-
-
-def redirect_based_on_role():
-    """
-    Redirects the just logged in user based on their role.
-    """
-    if current_user.role == "db_admin":
-        return redirect(url_for("admin.index"))
-    elif current_user.role == "sec_admin":
-        return redirect(url_for("security.security"))
-    else:
-        return redirect(url_for("posts.posts"))
+from utils import redirect_based_on_role
 
 
 def login_and_redirect(user):

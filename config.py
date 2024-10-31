@@ -152,7 +152,7 @@ class PostView(ModelView):
 
     @override
     def is_accessible(self):
-        return current_user.role == "db_admin"
+        return current_user.is_authenticated and current_user.role == "db_admin"
 
     @override
     def inaccessible_callback(self, name, **kwargs):  # type: ignore
@@ -180,7 +180,7 @@ class UserView(ModelView):
 
     @override
     def is_accessible(self):
-        return current_user.role == "db_admin"
+        return current_user.is_authenticated and current_user.role == "db_admin"
 
     @override
     def inaccessible_callback(self, name, **kwargs):  # type: ignore
