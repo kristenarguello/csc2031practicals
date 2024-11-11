@@ -1,5 +1,7 @@
-from config import app
-from flask import render_template
+from flask import render_template, request
+from flask_login import current_user
+
+from config import app, logger
 
 
 @app.route("/")
@@ -9,17 +11,26 @@ def index():
 
 @app.errorhandler(429)
 def rate_limit(e):
-    return render_template("errors/rate_limit.html"), 429
+    logger.info(
+        f"[User: {current_user.email}, Role: {current_user.role}, URL Requested: {request.url}, IP: {request.remote_addr}] Rate Limit."
+    )
+    return render_template("errors/rate_limit.html")
 
 
 @app.errorhandler(403)
 def forbidden(e):
-    return render_template("errors/forbidden.html"), 403
+    logger.info(
+        f"[User: {current_user.email}, Role: {current_user.role}, URL Requested: {request.url}, IP: {request.remote_addr}] Forbidden Access."
+    )
+    return render_template("errors/forbidden.html")
 
 
 @app.errorhandler(404)
 def page_not_found(e):
-    return render_template("errors/not_found.html"), 404
+    logger.info(
+        f"[User: {current_user.email}, Role: {current_user.role}, URL Requested: {request.url}, IP: {request.remote_addr}] Page Not Found."
+    )
+    return render_template("errors/not_found.html")
 
 
 if __name__ == "__main__":

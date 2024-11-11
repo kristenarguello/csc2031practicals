@@ -1,8 +1,8 @@
-from flask import Blueprint, flash, redirect, render_template, url_for
+from flask import Blueprint, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 from sqlalchemy import desc
 
-from config import Post, db
+from config import Post, db, logger
 from decorators import roles_required
 from posts.forms import PostForm
 
@@ -31,6 +31,9 @@ def create():
 
         db.session.add(new_post)
         db.session.commit()
+        logger.info(
+            f"[User: {current_user.email}, Role: {current_user.role}, Post: {new_post.id}, IP: {request.remote_addr}] Post Created."
+        )
 
         flash("Post created.", category="success")
         return redirect(url_for("posts.posts"))
@@ -47,6 +50,9 @@ def update(id):
         flash("Post not found.", category="danger")
         return redirect(url_for("posts.posts"))
     if post and current_user.get_id() != str(post.userid):
+        logger.info(
+            f"[User: {current_user.email}, Role: {current_user.role}, Post: {post.id}, Author: {post.user.email}, IP: {request.remote_addr}] Unauthorized Update."
+        )
         flash("You do not have permission to update this post.", category="danger")
         return redirect(url_for("posts.posts"))
 
@@ -61,6 +67,9 @@ def update(id):
         post_to_update.update(title=form.title.data, body=form.body.data)
 
         flash("Post updated.", category="success")
+        logger.info(
+            f"[User: {current_user.email}, Role: {current_user.role}, Post: {post_to_update.id}, Author: {post_to_update.user.email}, IP: {request.remote_addr}] Post updated."
+        )
         return redirect(url_for("posts.posts"))
 
     form.title.data = post_to_update.title
@@ -78,11 +87,18 @@ def delete(id):
         flash("Post not found.", category="danger")
         return redirect(url_for("posts.posts"))
     if post and current_user.get_id() != str(post.userid):
+        logger.info(
+            f"[User: {current_user.email}, Role: {current_user.role}, Post: {post.id}, Author: {post.user.email}, IP: {request.remote_addr}] Unauthorized Deletion."
+        )
         flash("You do not have permission to delete this post.", category="danger")
         return redirect(url_for("posts.posts"))
 
+    authors_email = post.user.email
     Post.query.filter_by(id=id).delete()
     db.session.commit()
 
+    logger.info(
+        f"[User: {current_user.email}, Role: {current_user.role}, Post: {id}, Author: {authors_email}, IP: {request.remote_addr}] Post deleted."
+    )
     flash("Post deleted.", category="success")
     return redirect(url_for("posts.posts"))

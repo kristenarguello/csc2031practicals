@@ -1,9 +1,10 @@
+import logging
 import secrets
 from datetime import datetime
 from typing import override
 
 import pyotp
-from flask import Flask, abort, flash, redirect, url_for
+from flask import Flask, abort, flash, redirect, request, url_for
 from flask_admin import Admin
 from flask_admin.contrib.sqla import ModelView
 from flask_admin.menu import MenuLink
@@ -100,6 +101,9 @@ class User(db.Model, UserMixin):
     # User posts
     posts = db.relationship("Post", order_by=Post.id, back_populates="user")
 
+    # logs
+    log = db.relationship("Log", uselist=False, back_populates="user")
+
     # UserMixin attributes
     active = db.Column(db.Boolean, nullable=False, default=True)
 
@@ -133,6 +137,46 @@ class User(db.Model, UserMixin):
     @property
     def is_active(self):
         return self.active
+
+    def generate_log(self):
+        log = Log(self.id)
+        db.session.add(log)
+        db.session.commit()
+        return log
+
+    def update_log(self):
+        if self.log is None:  # when the user is loggin in but log not created before
+            self.generate_log()
+
+        self.log.previous_login = self.log.latest_login  # type: ignore
+        self.log.previous_ip = self.log.latest_ip  # type: ignore
+
+        self.log.latest_login = datetime.now()  # type: ignore
+        self.log.latest_ip = request.remote_addr  # type: ignore
+
+        db.session.commit()
+
+
+class Log(db.Model):
+    __tablename__ = "logs"
+
+    id = db.Column(db.Integer, primary_key=True)
+    userid = db.Column(db.Integer, db.ForeignKey("users.id"))
+
+    registered_on = db.Column(db.DateTime, nullable=False)
+
+    latest_login = db.Column(db.DateTime, nullable=True)
+    previous_login = db.Column(db.DateTime, nullable=True)
+
+    # flask request object: request.remote_addr
+    latest_ip = db.Column(db.String(100), nullable=True)
+    previous_ip = db.Column(db.String(100), nullable=True)
+
+    user = db.relationship("User", back_populates="log")
+
+    def __init__(self, userid):
+        self.userid = userid
+        self.registered_on = datetime.now()
 
 
 # database admin
@@ -191,11 +235,40 @@ class UserView(ModelView):
         return redirect(url_for("accounts.login"))
 
 
+# TODO: delete this before final submission
+class LogView(ModelView):
+    column_display_pk = True
+    column_hide_backrefs = False
+    column_list = (
+        "id",
+        "userid",
+        "registered_on",
+        "latest_login",
+        "previous_login",
+        "latest_ip",
+        "previous_ip",
+        "user",
+    )
+
+    @override
+    def is_accessible(self):
+        return current_user.is_authenticated and current_user.role == "db_admin"
+
+    @override
+    def inaccessible_callback(self, name, **kwargs):  # type: ignore
+        if current_user.is_authenticated:
+            abort(403)
+        # if anonymous
+        flash("Administrator access required.", category="danger")
+        return redirect(url_for("accounts.login"))
+
+
 admin = Admin(app, name="DB Admin", template_mode="bootstrap4")
 admin._menu = admin._menu[1:]
 admin.add_link(MainIndexLink(name="Home Page"))
 admin.add_view(PostView(Post, db.session))
 admin.add_view(UserView(User, db.session))
+admin.add_view(LogView(Log, db.session))
 
 
 # app wide default rate limiter
@@ -210,6 +283,18 @@ limiter = Limiter(
 
 # set up mfa qr code
 qrcode = QRcode(app)
+
+# set up logging
+logger = logging.getLogger(__name__)
+handler = logging.FileHandler("security.log", "a")
+logger.setLevel(logging.INFO)
+formatter = logging.Formatter(
+    fmt="%(asctime)s - %(levelname)s - %(message)s",
+    datefmt="%d/%m/%Y %I:%M:%S %p",
+)
+handler.setFormatter(formatter)
+logger.addHandler(handler)
+
 
 # import blueprints (after app because of circular import)
 from accounts.views import accounts_bp

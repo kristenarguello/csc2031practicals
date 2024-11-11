@@ -1,19 +1,23 @@
-from flask import flash, redirect, session, url_for
+from flask import flash, redirect, request, session, url_for
 from flask_login import login_user
 from markupsafe import Markup
 
-from config import db
+from config import User, db, logger
 from utils import redirect_based_on_role
 
 
-def login_and_redirect(user):
+def login_and_redirect(user: User):
     """
     Logs in the user and sets the session attempts to 0.
     And then, redirects the user based on their role.
     """
     # got email, password and mfa right = login successful
     logged = login_user(user)
-    print(f"User logged in: {logged} - session _user_id: {session['_user_id']}")
+    user.update_log()
+    logger.info(
+        f"[User: {user.email}, Role: {user.role}, IP: {request.remote_addr}] Successful Login."
+    )
+
     if logged is False:
         flash(
             "Something happened, login failed. Please try again.",
@@ -38,6 +42,9 @@ def authentication_attempts_limiter(session, form, user):
                 "Number of incorrect login attempts exceeded. Please click <a href='/unlock'>here</a> to unlock your account."
             ),
             category="danger",
+        )
+        logger.info(
+            f"[User: {form.email.data}, Attempts: {session['attempts']}, IP: {request.remote_addr}] Exceeded Login Attempts."
         )
         # TODO: user may not log in using credentials from an inactive account
         # user.active = False

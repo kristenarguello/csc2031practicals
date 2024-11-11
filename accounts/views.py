@@ -1,10 +1,9 @@
-from flask import Blueprint, flash, redirect, render_template, session, url_for
-from flask_login import login_required, logout_user
-from markupsafe import Markup
+from flask import Blueprint, flash, redirect, render_template, request, session, url_for
+from flask_login import current_user, login_required, logout_user
 
 from accounts.forms import LoginForm, RegistrationForm
 from accounts.utils import authentication_attempts_limiter, login_and_redirect
-from config import User, db, limiter
+from config import User, db, limiter, logger
 from decorators import anonymous_required
 
 accounts_bp = Blueprint("accounts", __name__, template_folder="templates")
@@ -30,6 +29,11 @@ def registration():
 
         db.session.add(new_user)
         db.session.commit()
+
+        new_user.generate_log()
+        logger.info(
+            f"[User: {new_user.email}, Role: {new_user.role}, IP: {request.remote_addr}] Successful Registration."
+        )
 
         flash(
             "Account Created. You must enable Multi-Factor Authentication (MFA) to login.",
@@ -87,6 +91,9 @@ def login():
 
         # got something wrong - increase attempts
         session["attempts"] += 1
+        logger.info(
+            f"[User: {form.email.data}, Attempts: {session["attempts"]}, IP: {request.remote_addr}] Invalid Login Attempt."
+        )
         form = authentication_attempts_limiter(session=session, form=form, user=user)
 
     # form was not valid or the number of attempts was exceeded
@@ -115,5 +122,9 @@ def mfa_setup():
 @accounts_bp.route("/logout")
 @login_required
 def logout():
+    email = current_user.email
+    role = current_user.role
     logout_user()
+
+    logger.info(f"[User: {email}, Role: {role}] Successful Log Out.")
     return redirect(url_for("index"))

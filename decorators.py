@@ -1,7 +1,9 @@
 from functools import wraps
 
-from flask import abort, flash, redirect, url_for
+from flask import abort, flash, redirect, request, url_for
 from flask_login import current_user
+
+from config import logger
 from utils import redirect_based_on_role
 
 

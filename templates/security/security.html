@@ -2,4 +2,75 @@
 
 {% block content %}
     <h1>Security</h1>
+
+    <div>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+        <div class="alert alert-{{ category }} alert-dismissible fade show mt-3" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close" onclick="delete_flash(this)" style="position: relative; top: -2px; right: -2px;">
+            </button>
+        </div>
+        {% endfor %}
+        {% endwith %}
+    </div>
+
+    <table class="table table-bordered table-striped mt-4">
+        <br><br>
+        <h4>User Registration and Login Event Log</h4>
+        <thead class="thead-dark">
+            <tr>
+                <th scope="col">Account #</th>
+                <th scope="col">Username</th>
+                <th scope="col">Role</th>
+                <th scope="col">Registered On</th>
+                <th scope="col">Latest Login</th>
+                <th scope="col">Latest IP</th>
+                <th scope="col">Previous Login</th>
+                <th scope="col">Previous IP</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for log in logs %}
+            <tr>
+                <td>{{ log.user.id }}</td>
+                <td>{{ log.user.email }}</td>
+                <td>{{ log.user.role }}</td>
+                <td>{{ log.registered_on.strftime('%H:%M:%S %d-%m-%Y') if log.registered_on else 'N/A' }}</td>
+                <td>{{ log.latest_login.strftime('%H:%M:%S %d-%m-%Y') if log.latest_login else 'N/A' }}</td>
+                <td>{{ log.latest_ip if log.latest_ip else 'N/A'}}</td>
+                <td>{{ log.previous_login.strftime('%H:%M:%S %d-%m-%Y') if log.previous_login else 'N/A' }}</td>
+                <td>{{ log.previous_ip if log.previous_ip else 'N/A'}}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <br><br>
+    
+    <table class="table table-bordered table-striped mt-4">
+        <br><br>
+        <h4>User Event Log</h4>
+        <thead class="thead-dark">
+            <tr>
+                <th scope="col">Last 10 Security Log Entries</th>
+            </tr>
+        </thead>
+        {% if general_logs|length == 0 %}
+        <tbody>
+            <tr>
+                <td>No logs available</td>
+            </tr>
+        </tbody>
+        {% else %}
+            <tbody>
+                {% for log in general_logs %}
+                <tr>
+                    <td>{{ log }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        {% endif %}
+    </table>
+
 {% endblock %}
