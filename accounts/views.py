@@ -3,7 +3,7 @@ from flask_login import current_user, login_required, logout_user
 
 from accounts.forms import LoginForm, RegistrationForm
 from accounts.utils import authentication_attempts_limiter, login_and_redirect
-from config import User, db, limiter, logger
+from config import User, db, limiter, logger, ph
 from decorators import anonymous_required
 
 accounts_bp = Blueprint("accounts", __name__, template_folder="templates")
@@ -19,12 +19,13 @@ def registration():
             flash("Email already exists.", category="danger")
             return render_template("accounts/registration.html", form=form)
 
+        password_hash = ph.hash(form.password.data)
         new_user = User(
             email=form.email.data,
             firstname=form.firstname.data,
             lastname=form.lastname.data,
             phone=form.phone.data,
-            password=form.password.data,
+            password=password_hash,
         )
 
         db.session.add(new_user)

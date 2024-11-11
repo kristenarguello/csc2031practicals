@@ -21,3 +21,6 @@ Flask-Login
 python-dotenv
 
 pyotp
+
+# hashing
+argon2-cffi

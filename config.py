@@ -4,6 +4,7 @@ from datetime import datetime
 from typing import override
 
 import pyotp
+from argon2 import PasswordHasher, exceptions
 from flask import Flask, abort, flash, redirect, request, url_for
 from flask_admin import Admin
 from flask_admin.contrib.sqla import ModelView
@@ -118,7 +119,10 @@ class User(db.Model, UserMixin):
         self.phone = phone
 
     def validate_password(self, password):
-        return self.password == password
+        try:
+            return ph.verify(self.password, password)
+        except exceptions.VerifyMismatchError:
+            return False
 
     def validate_mfa(self, token):
         totp = pyotp.TOTP(self.mfa_key)
@@ -235,40 +239,11 @@ class UserView(ModelView):
         return redirect(url_for("accounts.login"))
 
 
-# TODO: delete this before final submission
-class LogView(ModelView):
-    column_display_pk = True
-    column_hide_backrefs = False
-    column_list = (
-        "id",
-        "userid",
-        "registered_on",
-        "latest_login",
-        "previous_login",
-        "latest_ip",
-        "previous_ip",
-        "user",
-    )
-
-    @override
-    def is_accessible(self):
-        return current_user.is_authenticated and current_user.role == "db_admin"
-
-    @override
-    def inaccessible_callback(self, name, **kwargs):  # type: ignore
-        if current_user.is_authenticated:
-            abort(403)
-        # if anonymous
-        flash("Administrator access required.", category="danger")
-        return redirect(url_for("accounts.login"))
-
-
 admin = Admin(app, name="DB Admin", template_mode="bootstrap4")
 admin._menu = admin._menu[1:]
 admin.add_link(MainIndexLink(name="Home Page"))
 admin.add_view(PostView(Post, db.session))
 admin.add_view(UserView(User, db.session))
-admin.add_view(LogView(Log, db.session))
 
 
 # app wide default rate limiter
@@ -295,6 +270,8 @@ formatter = logging.Formatter(
 handler.setFormatter(formatter)
 logger.addHandler(handler)
 
+# password hasher
+ph = PasswordHasher()
 
 # import blueprints (after app because of circular import)
 from accounts.views import accounts_bp
