@@ -1,3 +1,5 @@
+import base64
+from hashlib import scrypt
 import logging
 import secrets
 from datetime import datetime
@@ -5,6 +7,7 @@ from typing import override
 
 import pyotp
 from argon2 import PasswordHasher, exceptions
+from cryptography.fernet import Fernet, InvalidToken
 from flask import Flask, abort, flash, redirect, request, url_for
 from flask_admin import Admin
 from flask_admin.contrib.sqla import ModelView
@@ -81,6 +84,26 @@ class Post(db.Model):
         self.body = body
         db.session.commit()
 
+    def decrypt_post(self) -> tuple[str, str]:
+        # regenerating the same key as encryption
+        key = scrypt(
+            password=self.user.password.encode(),
+            salt=self.user.salt.encode(),
+            n=2048,
+            r=8,
+            p=1,
+            dklen=32,
+        )
+        try:
+            cipher = Fernet(base64.b64encode(key))
+            return (
+                cipher.decrypt(self.title).decode(),
+                cipher.decrypt(self.body).decode(),
+            )
+        except InvalidToken:
+            error = "Error: not using the same key as encryption"
+            return error, error
+
 
 class User(db.Model, UserMixin):
     __tablename__ = "users"
@@ -108,6 +131,9 @@ class User(db.Model, UserMixin):
     # UserMixin attributes
     active = db.Column(db.Boolean, nullable=False, default=True)
 
+    # crypto
+    salt = db.Column(db.String(100), nullable=False)
+
     def __init__(self, email, firstname, lastname, phone, password):
         self.email = email
         self.password = password
@@ -117,6 +143,7 @@ class User(db.Model, UserMixin):
         self.firstname = firstname
         self.lastname = lastname
         self.phone = phone
+        self.salt = base64.b64encode(secrets.token_bytes(32)).decode()
 
     def validate_password(self, password):
         try:

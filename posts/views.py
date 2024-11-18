@@ -1,3 +1,8 @@
+import base64
+
+from hashlib import scrypt
+
+from cryptography.fernet import Fernet
 from flask import Blueprint, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 from sqlalchemy import desc
@@ -13,7 +18,11 @@ posts_bp = Blueprint("posts", __name__, template_folder="templates")
 @login_required
 @roles_required("end_user")
 def posts():
-    all_posts = Post.query.order_by(desc("id")).all()
+    all_posts: list[Post] = Post.query.order_by(desc("id")).all()
+
+    # decrypt posts contents
+    for post in all_posts:
+        post.title, post.body = post.decrypt_post()
 
     return render_template("posts/posts.html", posts=all_posts)
 
@@ -25,8 +34,23 @@ def create():
     form = PostForm()
 
     if form.validate_on_submit():
+        # generating key at runtime rather than persistent storage
+        key = scrypt(
+            password=current_user.password.encode(),
+            salt=current_user.salt.encode(),
+            n=2048,
+            r=8,
+            p=1,
+            dklen=32,
+        )
+        encoded_key = base64.b64encode(key)
+        cipher = Fernet(encoded_key)
+
+        encrypted_title: str = cipher.encrypt(form.title.data.encode()).decode()
+        encrypted_body: str = cipher.encrypt(form.body.data.encode()).decode()
+
         new_post = Post(
-            userid=current_user.get_id(), title=form.title.data, body=form.body.data
+            userid=current_user.get_id(), title=encrypted_title, body=encrypted_body
         )
 
         db.session.add(new_post)

@@ -22,5 +22,6 @@ python-dotenv
 
 pyotp
 
-# hashing
+# cryptography
 argon2-cffi
+cryptography
