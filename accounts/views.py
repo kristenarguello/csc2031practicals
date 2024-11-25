@@ -3,7 +3,7 @@ from flask_login import current_user, login_required, logout_user
 
 from accounts.forms import LoginForm, RegistrationForm
 from accounts.utils import authentication_attempts_limiter, login_and_redirect
-from config import User, db, limiter, logger, ph
+from config import Post, User, db, limiter, logger, ph
 from decorators import anonymous_required
 
 accounts_bp = Blueprint("accounts", __name__, template_folder="templates")
@@ -104,7 +104,11 @@ def login():
 @accounts_bp.route("/account")
 @login_required
 def account():
-    return render_template("accounts/account.html")
+    posts: list[Post] = current_user.posts
+    for post in posts:
+        post.title, post.body = post.decrypt_post()
+
+    return render_template("accounts/account.html", posts=posts)
 
 
 @accounts_bp.route("/unlock")

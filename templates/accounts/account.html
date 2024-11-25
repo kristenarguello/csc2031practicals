@@ -37,10 +37,10 @@
                 <div class="mb-3">
                     <strong>Posts:</strong>
                 </div>
-                {% if current_user.posts|length == 0 %}
+                {% if posts|length == 0 %}
                 <p class="text-muted">No posts available :(</p>
                 {% endif %}
-                {% for post in current_user.posts %}
+                {% for post in posts %}
                 <div class="card mb-4 border-dark">
                     <div class="card-header bg-dark text-white">
                         <h5 class="mb-0">{{ post.title }}</h5>

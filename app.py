@@ -27,9 +27,6 @@ def forbidden(e):
 
 @app.errorhandler(404)
 def page_not_found(e):
-    logger.info(
-        f"[User: {current_user.email}, Role: {current_user.role}, URL Requested: {request.url}, IP: {request.remote_addr}] Page Not Found."
-    )
     return render_template("errors/not_found.html")
 
 
