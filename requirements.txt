@@ -17,6 +17,7 @@ WTForms
 Flask-Limiter
 flask-qrcode
 Flask-Login
+email-validator
 
 python-dotenv
 

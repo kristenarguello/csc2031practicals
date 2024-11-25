@@ -27,18 +27,30 @@
                     <div class="mb-3">
                         <label for="{{ form.email.id }}" class="form-label">{{ form.email.label }}<span class="text-danger">*</span></label>
                         {{ form.email(class="form-control") }}
+                        {% for error in form.email.errors %}
+                            <span class="text-danger">{{ error }}<br></span>
+                        {% endfor %}
                     </div>
                     <div class="mb-3">
                         <label for="{{ form.firstname.id }}" class="form-label">{{ form.firstname.label }}<span class="text-danger">*</span></label>
                         {{ form.firstname(class="form-control") }}
+                        {% for error in form.firstname.errors %}
+                            <span class="text-danger">{{ error }}<br></span>
+                        {% endfor %}
                     </div>
                     <div class="mb-3">
                         <label for="{{ form.lastname.id }}" class="form-label">{{ form.lastname.label }}<span class="text-danger">*</span></label>
                         {{ form.lastname(class="form-control") }}
+                        {% for error in form.lastname.errors %}
+                            <span class="text-danger">{{ error }}<br></span>
+                        {% endfor %}
                     </div>
                     <div class="mb-3">
                         <label for="{{ form.phone.id }}" class="form-label">{{ form.phone.label }}<span class="text-danger">*</span></label>
                         {{ form.phone(class="form-control") }}
+                        {% for error in form.phone.errors %}
+                            <span class="text-danger">{{ error }}<br></span>
+                    {% endfor %}
                     </div>
                     <div class="mb-3">
                         <label for="{{ form.password.id }}" class="form-label">{{ form.password.label }}<span class="text-danger">*</span></label>
@@ -51,7 +63,7 @@
                         <label for="{{ form.confirm_password.id }}" class="form-label">{{ form.confirm_password.label }}<span class="text-danger">*</span></label>
                         {{ form.confirm_password(class="form-control") }}
                         {% for error in form.confirm_password.errors %}
-                        <span class="text-danger">{{ error }}<br></span>
+                            <span class="text-danger">{{ error }}<br></span>
                         {% endfor %}
                     </div>
                     <div class="text-end">
