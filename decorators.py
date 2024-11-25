@@ -1,9 +1,8 @@
 from functools import wraps
 
-from flask import abort, flash, redirect, request, url_for
+from flask import abort, flash
 from flask_login import current_user
 
-from config import logger
 from utils import redirect_based_on_role
 
 
@@ -12,6 +11,7 @@ def roles_required(*roles):
         @wraps(f)
         def wrapped(*args, **kwargs):
             if current_user.role not in roles:
+                # ta vindo 2 vezes aqui aaa
                 abort(403)
             return f(*args, **kwargs)
 
