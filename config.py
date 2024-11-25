@@ -1,13 +1,15 @@
 import base64
-from hashlib import scrypt
 import logging
+import os
 import secrets
 from datetime import datetime
+from hashlib import scrypt
 from typing import override
 
 import pyotp
 from argon2 import PasswordHasher, exceptions
 from cryptography.fernet import Fernet, InvalidToken
+from dotenv import load_dotenv
 from flask import Flask, abort, flash, redirect, request, url_for
 from flask_admin import Admin
 from flask_admin.contrib.sqla import ModelView
@@ -18,22 +20,28 @@ from flask_qrcode import QRcode
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import MetaData
 
+load_dotenv()
 app = Flask(__name__)
 
+# env variables
 # secret key for flask forms
-app.config["SECRET_KEY"] = secrets.token_hex(16)
+app.config["SECRET_KEY"] = os.getenv("SECRET_KEY")
 
 # database configuration
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///csc2031blog.db"
-app.config["SQLALCHEMY_ECHO"] = True
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("SQLALCHEMY_DATABASE_URI")
+
+app.config["SQLALCHEMY_ECHO"] = bool(os.getenv("SQLALCHEMY_ECHO"))
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = bool(
+    os.getenv("SQLALCHEMY_TRACK_MODIFICATIONS")
+)
 
 # recaptcha configuration
-app.config["RECAPTCHA_PUBLIC_KEY"] = "6Lcur1oqAAAAADss3xvAdVlpRqlt1pSf43nskd-K"
-app.config["RECAPTCHA_PRIVATE_KEY"] = "6Lcur1oqAAAAAAfoao99Z-fuC3x4m8YpirBqQ1Rm"
+app.config["RECAPTCHA_PUBLIC_KEY"] = os.getenv("RECAPTCHA_PUBLIC_KEY")
+app.config["RECAPTCHA_PRIVATE_KEY"] = os.getenv("RECAPTCHA_PRIVATE_KEY")
 
 # flask admin configuration
-app.config["FLASK_ADMIN_FLUID_LAYOUT"] = True
+app.config["FLASK_ADMIN_FLUID_LAYOUT"] = bool(os.getenv("FLASK_ADMIN_FLUID_LAYOUT"))
+
 
 metadata = MetaData(
     naming_convention={
