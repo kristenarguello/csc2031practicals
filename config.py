@@ -1,6 +1,7 @@
 import base64
 import logging
 import os
+import re
 import secrets
 from datetime import datetime
 from hashlib import scrypt
@@ -307,6 +308,13 @@ logger.addHandler(handler)
 
 # password hasher
 ph = PasswordHasher()
+
+# firewall conditions
+conditions = {
+    "SQL Injection": re.compile(r"union|select|insert|drop|alter|;|`|'", re.IGNORECASE),
+    "XSS": re.compile(r"<script>|<iframe>|%3Cscript%3E|%3Ciframe%3E", re.IGNORECASE),
+    "Path Traversal": re.compile(r"../|..|%2e%2e%2f|%2e%2e/|..%2f", re.IGNORECASE),
+}
 
 # import blueprints (after app because of circular import)
 from accounts.views import accounts_bp

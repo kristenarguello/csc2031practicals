@@ -1,7 +1,7 @@
 from flask import render_template, request
 from flask_login import current_user
 
-from config import app, logger
+from config import app, conditions, logger
 
 
 @app.route("/")
@@ -47,6 +47,15 @@ def internal_server_error(e):
 @app.errorhandler(501)
 def not_implemented(e):
     return render_template("errors/not_implemented.html"), 501
+
+
+@app.before_request
+def firewall():
+    for type, pattern in conditions.items():
+        if pattern.search(request.path) or pattern.search(
+            request.query_string.decode()
+        ):
+            return render_template("errors/attack_detected.html", label=type)
 
 
 if __name__ == "__main__":
