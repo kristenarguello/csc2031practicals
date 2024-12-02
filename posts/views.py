@@ -34,24 +34,10 @@ def create():
     form = PostForm()
 
     if form.validate_on_submit():
-        # generating key at runtime rather than persistent storage
-        key = scrypt(
-            password=current_user.password.encode(),
-            salt=current_user.salt.encode(),
-            n=2048,
-            r=8,
-            p=1,
-            dklen=32,
-        )
-        encoded_key = base64.b64encode(key)
-        cipher = Fernet(encoded_key)
-
-        encrypted_title: str = cipher.encrypt(form.title.data.encode()).decode()
-        encrypted_body: str = cipher.encrypt(form.body.data.encode()).decode()
-
         new_post = Post(
-            userid=current_user.get_id(), title=encrypted_title, body=encrypted_body
+            userid=current_user.get_id(), title=form.title.data, body=form.body.data
         )
+        new_post.encrypt_post(current_user)
 
         db.session.add(new_post)
         db.session.commit()
@@ -69,23 +55,19 @@ def create():
 @login_required
 @roles_required("end_user")
 def update(id):
-    post = Post.query.filter_by(id=id).first()
-    if not post:
+    post_to_update = Post.query.filter_by(id=id).first()
+    if not post_to_update:
         flash("Post not found.", category="danger")
         return redirect(url_for("posts.posts"))
-    if post and current_user.get_id() != str(post.userid):
+    if post_to_update and current_user.get_id() != str(post_to_update.userid):
         logger.info(
-            f"[User: {current_user.email}, Role: {current_user.role}, Post: {post.id}, Author: {post.user.email}, IP: {request.remote_addr}] Unauthorized Update."
+            f"[User: {current_user.email}, Role: {current_user.role}, Post: {post_to_update.id}, Author: {post_to_update.user.email}, IP: {request.remote_addr}] Unauthorized Update."
         )
         flash("You do not have permission to update this post.", category="danger")
         return redirect(url_for("posts.posts"))
 
-    post_to_update = Post.query.filter_by(id=id).first()
-
-    if not post_to_update:
-        return redirect(url_for("posts.posts"))
-
     form = PostForm()
+    title, body = post_to_update.decrypt_post()
 
     if form.validate_on_submit():
         post_to_update.update(title=form.title.data, body=form.body.data)
@@ -96,8 +78,8 @@ def update(id):
         )
         return redirect(url_for("posts.posts"))
 
-    form.title.data = post_to_update.title
-    form.body.data = post_to_update.body
+    form.title.data = title
+    form.body.data = body
 
     return render_template("posts/update.html", form=form)
 

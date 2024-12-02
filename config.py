@@ -91,6 +91,7 @@ class Post(db.Model):
         self.created = datetime.now()
         self.title = title
         self.body = body
+        self.encrypt_post(self.user)
         db.session.commit()
 
     def decrypt_post(self) -> tuple[str, str]:
@@ -112,6 +113,24 @@ class Post(db.Model):
         except InvalidToken:
             error = "Error: not using the same key as encryption"
             return error, error
+
+    def encrypt_post(self, user):
+        key = scrypt(
+            password=user.password.encode(),
+            salt=user.salt.encode(),
+            n=2048,
+            r=8,
+            p=1,
+            dklen=32,
+        )
+        encoded_key = base64.b64encode(key)
+        cipher = Fernet(encoded_key)
+
+        encrypted_title: str = cipher.encrypt(self.title.encode()).decode()
+        encrypted_body: str = cipher.encrypt(self.body.encode()).decode()
+
+        self.title = encrypted_title
+        self.body = encrypted_body
 
 
 class User(db.Model, UserMixin):
@@ -313,7 +332,9 @@ ph = PasswordHasher()
 conditions = {
     "SQL Injection": re.compile(r"union|select|insert|drop|alter|;|`|'", re.IGNORECASE),
     "XSS": re.compile(r"<script>|<iframe>|%3Cscript%3E|%3Ciframe%3E", re.IGNORECASE),
-    "Path Traversal": re.compile(r"../|..|%2e%2e%2f|%2e%2e/|..%2f", re.IGNORECASE),
+    "Path Traversal": re.compile(
+        r"\.\./|\.\.|%2e%2e%2f|%2e%2e/|\.\.%2f", re.IGNORECASE
+    ),
 }
 
 # import blueprints (after app because of circular import)
