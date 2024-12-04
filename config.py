@@ -19,10 +19,30 @@ from flask_login import LoginManager, UserMixin, current_user
 from flask_migrate import Migrate
 from flask_qrcode import QRcode
 from flask_sqlalchemy import SQLAlchemy
+from flask_talisman import Talisman
 from sqlalchemy import MetaData
 
 load_dotenv()
 app = Flask(__name__)
+
+
+csp = {
+    "xyz-src": ["'self'"],
+    "style-src": [
+        "https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css"
+    ],
+    "script-src": [
+        "https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/js/bootstrap.bundle.min.js",
+        "https://www.google.com/recaptcha/",
+        "https://www.gstatic.com/recaptcha/",
+    ],
+    "frame-src": [
+        "https://www.google.com/recaptcha/",
+        "https://recaptcha.google.com/recaptcha/",
+    ],
+}
+talisman = Talisman(app, content_security_policy=csp)
+
 
 # env variables
 # secret key for flask forms
